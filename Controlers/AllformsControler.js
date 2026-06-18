@@ -1,5 +1,7 @@
 import validator from 'validator'
 import BookDemoModel from '../models/Bookdemo.js'
+import schoolRegistrationModel from '../models/schoolRegistration.js';
+import bcrypt from 'bcrypt'
 async function Register(req, res) {
 
 }
@@ -119,6 +121,124 @@ async function BookADemo(req, res) {
 }
 
 async function RegisterAschool(req, res) {
+
+  let {schoolName,
+    registrationNumber,
+    schoolBoard,
+    schoolType,
+    officialEmail,
+    mobileNumber,
+    schoolPin,
+    address,
+    city,
+    state,
+    pinCode,
+    adminName,
+    adminEmail,
+    adminMobile,
+    password,
+    confirmPassword,
+    acceptTerms
+ } = req.body.formData
+
+console.log(req.body.formdata)
+
+ schoolName = schoolName?.trim()
+    registrationNumber = registrationNumber?.trim()
+    schoolBoard = schoolBoard?.trim()
+    schoolType = schoolType?.trim()
+    officialEmail = officialEmail?.trim()
+    mobileNumber = mobileNumber?.trim()
+    schoolPin = schoolPin?.trim()
+    address = address?.trim()
+    city = city?.trim()
+    state = state?.trim()
+    pinCode = pinCode?.trim()
+    adminName = adminName?.trim()
+    adminEmail = adminEmail?.trim()
+    adminMobile = adminMobile?.trim()
+    password = password?.trim()
+    confirmPassword = confirmPassword?.trim();
+
+ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&^#()_\-+=])[A-Za-z\d@$!%*?&^#()_\-+=]{8,}$/;
+   
+  const phoneRegex = /^[6-9]\d{9}$/;
+ try{
+
+
+
+
+const existingSchool = await schoolRegistrationModel.findOne({
+  $or: [
+    { officialEmail: officialEmail },
+    { adminEmail: adminEmail },
+    { adminMobile: adminMobile },
+  ],
+});
+
+if (existingSchool) {
+  return res.status(409).json({
+    success: false,
+    message: "School already registered with this email or mobile number",
+  });
+}
+
+  if(!phoneRegex.test(mobileNumber)  || !phoneRegex.test(adminMobile)){
+    
+    return res.json({ success: false, message: 'Please Enter a valid phone number' })
+
+  }
+
+ if(!passwordRegex.test(password)){
+  return res.json({success:false , message:'The password must be at least include 1 uppercase 1 lowercase 1 number  and 1 special character'})
+ }
+   if(password != confirmPassword){
+    return res.json({success:false , message:'password and confirm password should be same'})
+  }
+
+  if (!acceptTerms) {
+  return res.status(400).json({
+    success: false,
+    message: "Please accept terms and conditions",
+  });
+} 
+const hashedPassword = await bcrypt.hash(password, 10);
+
+ const newschool = new schoolRegistrationModel({
+  schoolName,
+    registrationNumber,
+    schoolBoard,
+    schoolType,
+    officialEmail,
+    mobileNumber,
+    schoolPin,
+    address,
+    city,
+    state,
+    pinCode,
+    adminName,
+    adminEmail,
+    adminMobile,
+    password : hashedPassword,
+    acceptTerms
+
+ })
+
+
+
+ await newschool.save()
+
+ return res.status(201).json({success:true , message:'congratulation Registration successfull'})
+    
+ 
+
+ }catch(err){
+
+  console.log(err.message)
+  return res.status(500).json({success:false , message:'somthing went wrong'})
+
+ }
+
 
 }
 
